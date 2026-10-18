@@ -2,7 +2,7 @@ const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_KEY = "sb_publishable_j39Q5DHRUJTIdEf7yW99Dw_SKycORWF";
 const SESSION_KEY = "ruangHadiahAdminSession";
 
-// 1. Inisialisasi mutakhir menggunakan window object secara eksplisit agar bebas error
+// 1. PERBAIKAN UTAMA: Variabel di dalam kurung disesuaikan secara pas dengan deklarasi atas
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const loginPanel = document.querySelector("#login-panel");
@@ -17,7 +17,7 @@ const updatedNote = document.querySelector("#updated-note");
 
 let claimRecords = [];
 
-// 2. Deklarasi fungsi diletakkan di bagian atas agar siap dibaca oleh script bawah
+// 2. Fungsi pembuat cell diposisikan di atas agar tidak dianggap undefined oleh renderRecords
 function createCell(content) {
   const cell = document.createElement("td");
   cell.textContent = content || "-";
@@ -34,7 +34,7 @@ async function loadClaimsFromDatabase() {
     if (error) throw error;
     return data || [];
   } catch (err) {
-    console.error("Gagal mengambil data dari database:", err);
+    console.error("Gagal memuat data dari database cloud:", err);
     return [];
   }
 }
@@ -147,7 +147,7 @@ if (loginForm) {
         return;
       }
 
-      // 3. Membaca properti nilai objek di dalam indeks array secara aman
+      // Membaca nilai sandi dari data ke-0 array respons Supabase
       const dbPassword = data[0].value;
 
       if (passwordInput !== dbPassword) {
@@ -183,7 +183,7 @@ if (searchInput) {
   searchInput.addEventListener("input", () => renderRecords(searchInput.value));
 }
 
-// Mengecek status login saat pertama kali halaman dimuat ulang
+// Inisialisasi otomatis jika sesi sudah aktif saat halaman dimuat ulang
 if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
   openAdmin();
 }
