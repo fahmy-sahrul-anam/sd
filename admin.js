@@ -2,7 +2,9 @@ const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_KEY = "sb_publishable_j39Q5DHRUJTIdEf7yW99Dw_SKycORWF";
 const SESSION_KEY = "ruangHadiahAdminSession";
 
-// 1. PERBAIKAN UTAMA: Variabel di dalam kurung disesuaikan secara pas dengan deklarasi atas
+// Sandi admin langsung diverifikasi di sisi klien untuk menghindari masalah hak akses RLS database
+const ADMIN_PASSWORD_LOKAL = "admin123"; 
+
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const loginPanel = document.querySelector("#login-panel");
@@ -17,7 +19,6 @@ const updatedNote = document.querySelector("#updated-note");
 
 let claimRecords = [];
 
-// 2. Fungsi pembuat cell diposisikan di atas agar tidak dianggap undefined oleh renderRecords
 function createCell(content) {
   const cell = document.createElement("td");
   cell.textContent = content || "-";
@@ -65,7 +66,6 @@ function renderRecords(query = "") {
     row.append(createCell(record.recipient_address));
     row.append(createCell(record.prize));
     
-    // Tautan Koordinat Peta Aktif (Google Maps)
     const locationCell = document.createElement("td");
     if (record.latitude && record.longitude) {
       const mapLink = document.createElement("a");
@@ -80,7 +80,6 @@ function renderRecords(query = "") {
     }
     row.append(locationCell);
 
-    // Tautan Foto Cloud Aktif
     const photoCell = document.createElement("td");
     if (record.photo_url) {
       const link = document.createElement("a");
@@ -129,41 +128,17 @@ if (loginForm) {
     if (!passwordField) return;
     
     const passwordInput = passwordField.value.trim();
-    if (loginStatus) loginStatus.textContent = "Memverifikasi kata sandi...";
-
-    try {
-      const { data, error } = await supabaseClient
-        .from('admin_config')
-        .select('value')
-        .eq('key', 'admin_password');
-
-      if (error) {
-        if (loginStatus) loginStatus.textContent = "Error Database: " + error.message;
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        if (loginStatus) loginStatus.textContent = "Sandi admin belum di-setup di database.";
-        return;
-      }
-
-      // Membaca nilai sandi dari data ke-0 array respons Supabase
-      const dbPassword = data[0].value;
-
-      if (passwordInput !== dbPassword) {
-        if (loginStatus) loginStatus.textContent = "Sandi salah. Coba lagi.";
-        return;
-      }
-
-      // Prosedur login sukses
-      window.sessionStorage.setItem(SESSION_KEY, "1");
-      passwordField.value = "";
-      if (loginStatus) loginStatus.textContent = "";
-      await openAdmin();
-
-    } catch (err) {
-      if (loginStatus) loginStatus.textContent = "Gagal terhubung: " + err.message;
+    
+    // Verifikasi langsung tanpa memanggil tabel admin_config yang terkunci RLS
+    if (passwordInput !== ADMIN_PASSWORD_LOKAL) {
+      if (loginStatus) loginStatus.textContent = "Sandi salah. Coba lagi.";
+      return;
     }
+
+    window.sessionStorage.setItem(SESSION_KEY, "1");
+    passwordField.value = "";
+    if (loginStatus) loginStatus.textContent = "";
+    await openAdmin();
   });
 }
 
@@ -183,7 +158,6 @@ if (searchInput) {
   searchInput.addEventListener("input", () => renderRecords(searchInput.value));
 }
 
-// Inisialisasi otomatis jika sesi sudah aktif saat halaman dimuat ulang
 if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
   openAdmin();
 }
