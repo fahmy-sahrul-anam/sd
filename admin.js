@@ -1,8 +1,9 @@
-const SUPABASE_URL = "https://supabase.co";
+// 1. MEMASTIKAN URL MENGGUNAKAN SERVER PROYEK ASLI ANDA
+const SUPABASE_URL = "https://cyazhqcdlmsqxntxssck.supabase.co";
 const SUPABASE_KEY = "sb_publishable_j39Q5DHRUJTIdEf7yW99Dw_SKycORWF";
 const SESSION_KEY = "ruangHadiahAdminSession";
 
-// Menggunakan inisialisasi eksplisit dari window objek agar terhindar dari error "not defined"
+// Inisialisasi client menggunakan objek window global
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const loginPanel = document.querySelector("#login-panel");
@@ -64,6 +65,7 @@ function renderRecords(query = "") {
     row.append(createCell(record.recipient_address));
     row.append(createCell(record.prize));
     
+    // PERBAIKAN: Format URL Google Maps yang interaktif dan valid
     const locationCell = document.createElement("td");
     if (record.latitude && record.longitude) {
       const mapLink = document.createElement("a");
@@ -120,7 +122,7 @@ async function openAdmin() {
 if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    event.stopPropagation(); // Menghentikan bubbling agar browser tidak melakukan refresh sepihak
+    event.stopPropagation();
     
     const passwordField = document.querySelector("#admin-password");
     if (!passwordField) return;
@@ -129,7 +131,6 @@ if (loginForm) {
     if (loginStatus) loginStatus.textContent = "Memverifikasi kata sandi...";
 
     try {
-      // Mengambil data secara langsung dari tabel config
       const { data, error } = await supabaseClient
         .from('admin_config')
         .select('value')
@@ -145,6 +146,7 @@ if (loginForm) {
         return;
       }
 
+      // Mengambil nilai index ke-0 dari array respons data secara tepat
       const dbPassword = data[0].value;
 
       if (passwordInput !== dbPassword) {
@@ -152,7 +154,7 @@ if (loginForm) {
         return;
       }
 
-      // Login Sukses
+      // Prosedur login berhasil
       window.sessionStorage.setItem(SESSION_KEY, "1");
       passwordField.value = "";
       if (loginStatus) loginStatus.textContent = "";
@@ -180,7 +182,6 @@ if (searchInput) {
   searchInput.addEventListener("input", () => renderRecords(searchInput.value));
 }
 
-// Inisialisasi otomatis jika sesi sudah aktif saat halaman dimuat ulang
 if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
   openAdmin();
 }
