@@ -2,7 +2,7 @@ const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_KEY = "sb_publishable_j39Q5DHRUJTIdEf7yW99Dw_SKycORWF";
 const SESSION_KEY = "ruangHadiahAdminSession";
 
-// Inisialisasi client dari window object secara aman
+// 1. Inisialisasi mutakhir menggunakan window object secara eksplisit agar bebas error
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const loginPanel = document.querySelector("#login-panel");
@@ -17,7 +17,7 @@ const updatedNote = document.querySelector("#updated-note");
 
 let claimRecords = [];
 
-// PERBAIKAN: Fungsi pembuat cell dipindahkan ke paling atas agar tidak memicu error "undefined"
+// 2. Deklarasi fungsi diletakkan di bagian atas agar siap dibaca oleh script bawah
 function createCell(content) {
   const cell = document.createElement("td");
   cell.textContent = content || "-";
@@ -34,7 +34,7 @@ async function loadClaimsFromDatabase() {
     if (error) throw error;
     return data || [];
   } catch (err) {
-    console.error("Gagal memuat data dari database cloud:", err);
+    console.error("Gagal mengambil data dari database:", err);
     return [];
   }
 }
@@ -143,11 +143,11 @@ if (loginForm) {
       }
 
       if (!data || data.length === 0) {
-        if (loginStatus) loginStatus.textContent = "Sandi admin belum di-setup di database Supabase.";
+        if (loginStatus) loginStatus.textContent = "Sandi admin belum di-setup di database.";
         return;
       }
 
-      // Membaca array objek index ke-0 secara aman
+      // 3. Membaca properti nilai objek di dalam indeks array secara aman
       const dbPassword = data[0].value;
 
       if (passwordInput !== dbPassword) {
@@ -183,7 +183,7 @@ if (searchInput) {
   searchInput.addEventListener("input", () => renderRecords(searchInput.value));
 }
 
-// Inisialisasi otomatis jika sesi sudah aktif saat halaman dimuat ulang
+// Mengecek status login saat pertama kali halaman dimuat ulang
 if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
   openAdmin();
 }
