@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f3e9">
+  <title>Panel Admin — Ruang Hadiah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Memuat library Supabase terlebih dahulu secara sinkron -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/supabase.min.js"></script>
+  <!-- Memuat logika admin setelah library siap sepenuhnya -->
+  <script src="admin.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">+</span><span>Ruang Hadiah</span></a>
+    <span class="demo-tag">Admin — Panel Cloud</span>
+  </header>
+
+  <main>
+    <section class="page-heading">
+      <div>
+        <p class="eyebrow">Dashboard / Privat</p>
+        <h1>Panel undian</h1>
+        <p class="intro-copy">Klaim hanya terlihat setelah admin masuk. Data disimpan secara realtime di cloud database Supabase.</p>
+      </div>
+    </section>
+
+    <section class="login-panel" id="login-panel" aria-labelledby="login-title">
+      <p class="section-kicker">Autentikasi</p>
+      <h2 id="login-title">Masuk ke panel</h2>
+      <p class="login-copy">Masukkan kredensial khusus administrator untuk memvalidasi identitas pengelola sistem.</p>
+      <form id="admin-login-form">
+        <label class="login-label" for="admin-password">Kata sandi admin</label>
+        <input class="search-input login-input" id="admin-password" type="password" autocomplete="current-password" required>
+        <button class="login-button" id="login-button" type="submit">Masuk</button>
+      </form>
+      <p class="login-status" id="login-status" aria-live="polite"></p>
+    </section>
+
+    <section id="admin-data" hidden>
+      <div class="admin-toolbar">
+        <span class="authenticated-label">Sesi admin aktif</span>
+        <button class="signout-button" id="signout-button" type="button">Keluar</button>
+      </div>
+
+      <section class="stats" aria-label="Ringkasan klaim">
+        <article class="stat"><span class="stat-label">Total klaim</span><strong id="total-count">0</strong><span class="stat-detail">tersimpan</span></article>
+        <article class="stat"><span class="stat-label">Dengan lokasi</span><strong id="location-count">0</strong><span class="stat-detail">dibagikan pengguna</span></article>
+        <article class="stat"><span class="stat-label">Dengan foto</span><strong id="photo-count">0</strong><span class="stat-detail">dipilih pengguna</span></article>
+      </section>
+
+      <section class="records" aria-labelledby="records-title">
+        <div class="records-heading">
+          <div><p class="section-kicker">Klaim masuk</p><h2 id="records-title">Data penerima hadiah</h2></div>
+          <div>
+            <label class="search-label" for="record-search">Cari klaim</label>
+            <input id="record-search" class="search-input" type="search" placeholder="Nama, alamat, hadiah..." autocomplete="off">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th scope="col">Waktu</th><th scope="col">Penerima</th><th scope="col">Alamat rumah</th>
+              <th scope="col">Hadiah</th><th scope="col">Lokasi</th><th scope="col">Foto</th>
+            </tr></thead>
+            <tbody id="records-body"></tbody>
+          </table>
+          <p class="empty-state" id="empty-state" hidden>Belum ada klaim.</p>
+        </div>
+        <p class="updated-note" id="updated-note" aria-live="polite"></p>
+      </section>
+    </section>
+
+    <p class="footer-note">Sistem terenkripsi: koneksi dan penyimpanan data dilindungi oleh arsitektur backend cloud terpusat.</p>
+  </main>
+</body>
+</html>

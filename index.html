@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f3e9">
+  <title>Putar &amp; Menang — Undian Hadiah (Demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">+</span><span>Ruang Hadiah</span></div>
+    <span class="demo-tag">Demo — data tersimpan di browser ini saja</span>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">Satu putaran, satu kejutan</p>
+      <h1 id="page-title">Putar &amp; Menang</h1>
+      <p class="intro-copy">Putar roda untuk mendapatkan hadiah. Data klaim hanya dikirim setelah kamu menyetujui pemberitahuan privasi.</p>
+    </section>
+
+    <section class="workspace" aria-label="Undian hadiah">
+      <div class="wheel-side">
+        <p class="section-kicker">01 / Putar rodanya</p>
+        <div class="wheel-wrap">
+          <span class="wheel-pointer" aria-hidden="true"></span>
+          <svg class="wheel-svg" id="wheel" viewBox="0 0 400 400" role="img" aria-label="Roda undian dengan delapan hadiah"></svg>
+          <span class="wheel-center" aria-hidden="true">PUTAR<br>AKU</span>
+        </div>
+        <button class="spin-button" id="spin-button" type="button">Putar roda</button>
+        <p class="wheel-note">Hadiah dipilih secara acak.</p>
+      </div>
+
+      <div class="prize-side">
+        <p class="section-kicker">02 / Hadiahmu</p>
+        <div class="result-box" aria-live="polite" aria-atomic="true">
+          <span class="result-label" id="result-label">Hasil undian</span>
+          <p class="result-title" id="result-title">Siap untuk kejutan?</p>
+        </div>
+
+        <ul class="prize-list" aria-label="Daftar hadiah">
+          <li>Voucher belanja</li><li>Headphone</li><li>Kopi gratis</li><li>Kartu hadiah</li>
+          <li>Tas kanvas</li><li>Diskon spesial</li><li>Tumbler</li><li>Hadiah misteri</li>
+        </ul>
+
+        <div class="claim-content" id="claim-content" aria-hidden="true">
+          <label class="field-label" for="recipient-name">Nama penerima hadiah</label>
+          <input class="name-input" id="recipient-name" name="recipient" type="text" autocomplete="name" maxlength="80" placeholder="Masukkan nama" required>
+          <label class="field-label address-label" for="recipient-address">Alamat rumah</label>
+          <textarea class="name-input address-input" id="recipient-address" name="address" autocomplete="street-address" maxlength="300" placeholder="Alamat untuk pengiriman hadiah" required></textarea>
+
+          <p class="access-title">Data tambahan (opsional)</p>
+          <div class="access-options">
+            <button class="access-button" id="camera-button" type="button" aria-pressed="false">Aktifkan kamera depan</button>
+            <button class="access-button" id="location-button" type="button">Bagikan lokasi</button>
+          </div>
+          <p class="access-status" id="access-status" aria-live="polite"></p>
+          <video class="camera-preview" id="camera-preview" autoplay playsinline muted hidden aria-label="Pratinjau kamera depan"></video>
+          <div class="photo-actions" id="photo-actions" hidden>
+            <button class="access-button" id="capture-button" type="button">Ambil foto</button>
+            <button class="access-button" id="remove-photo-button" type="button" hidden>Hapus foto</button>
+          </div>
+          <img class="selfie-preview" id="selfie-preview" alt="Pratinjau foto klaim" hidden>
+          <p class="location-readout" id="location-readout" aria-live="polite" hidden></p>
+          <p class="privacy-note">Demo ini menyimpan data langsung di browser kamu (localStorage), bukan ke server mana pun. Foto/lokasi dikirim hanya jika kamu memilihnya.</p>
+          <label class="consent-row" for="claim-consent">
+            <input id="claim-consent" type="checkbox" required>
+            <span>Saya setuju menyimpan nama, alamat, serta foto/lokasi yang saya pilih untuk demo ini. Admin demo dapat melihat data tersebut.</span>
+          </label>
+          <button class="claim-button" id="claim-button" type="button">Kirim klaim</button>
+          <p class="claim-status" id="claim-status" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">Demo lokal: data hanya tersimpan di browser perangkat ini (localStorage) dan hilang jika cache dibersihkan. Akses kamera dan lokasi dapat dicabut di pengaturan browser.</p>
+  </main>
+</body>
+</html>
