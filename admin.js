@@ -2,6 +2,7 @@ const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_KEY = "sb_publishable_j39Q5DHRUJTIdEf7yW99Dw_SKycORWF";
 const SESSION_KEY = "ruangHadiahAdminSession";
 
+// Inisialisasi client Supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const loginPanel = document.querySelector("#login-panel");
@@ -22,6 +23,7 @@ function createCell(content) {
   return cell;
 }
 
+// Mengambil data klaim langsung dari database cloud Supabase
 async function loadClaimsFromDatabase() {
   try {
     const { data, error } = await supabaseClient
@@ -48,12 +50,12 @@ function renderRecords(query = "") {
   recordsBody.replaceChildren();
   
   if (filtered.length === 0) {
-    emptyState.hidden = false;
-    updatedNote.textContent = `Menampilkan 0 klaim.`;
+    if (emptyState) emptyState.hidden = false;
+    if (updatedNote) updatedNote.textContent = `Menampilkan 0 klaim.`;
     return;
   }
 
-  emptyState.hidden = true;
+  if (emptyState) emptyState.hidden = true;
   filtered.forEach((record) => {
     const row = document.createElement("tr");
     
@@ -63,7 +65,7 @@ function renderRecords(query = "") {
     row.append(createCell(record.recipient_address));
     row.append(createCell(record.prize));
     
-    // Kolom Tautan Google Maps
+    // Tautan Koordinat Peta Aktif (Google Maps)
     const locationCell = document.createElement("td");
     if (record.latitude && record.longitude) {
       const mapLink = document.createElement("a");
@@ -78,7 +80,7 @@ function renderRecords(query = "") {
     }
     row.append(locationCell);
 
-    // Kolom Tautan Foto Cloud
+    // Tautan Foto Cloud Aktif
     const photoCell = document.createElement("td");
     if (record.photo_url) {
       const link = document.createElement("a");
@@ -96,14 +98,13 @@ function renderRecords(query = "") {
     recordsBody.append(row);
   });
 
-  updatedNote.textContent = `Menampilkan ${filtered.length} dari ${claimRecords.length} klaim.`;
+  if (updatedNote) updatedNote.textContent = `Menampilkan ${filtered.length} dari ${claimRecords.length} klaim.`;
 }
 
 async function openAdmin() {
-  loginStatus.textContent = "Memuat data dari server cloud...";
+  if (loginStatus) loginStatus.textContent = "Memuat data dari server cloud...";
   claimRecords = await loadClaimsFromDatabase();
   
-  // Memastikan elemen counter terisi dengan aman tanpa memicu crash jika data kosong
   const totalCountEl = document.querySelector("#total-count");
   const locationCountEl = document.querySelector("#location-count");
   const photoCountEl = document.querySelector("#photo-count");
@@ -112,59 +113,80 @@ async function openAdmin() {
   if (locationCountEl) locationCountEl.textContent = String(claimRecords.filter((r) => r.latitude).length);
   if (photoCountEl) photoCountEl.textContent = String(claimRecords.filter((r) => r.photo_url).length);
   
-  loginPanel.hidden = true;
-  adminData.hidden = false;
-  loginStatus.textContent = "";
-  renderRecords(searchInput.value || "");
+  if (loginPanel) loginPanel.hidden = true;
+  if (adminData) adminData.hidden = false;
+  if (loginStatus) loginStatus.textContent = "";
+  
+  renderRecords(searchInput ? searchInput.value : "");
 }
 
-// Proses validasi login langsung ke database cloud
-loginForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const passwordInput = document.querySelector("#admin-password").value;
-  loginStatus.textContent = "Memverifikasi kata sandi...";
+// Proses verifikasi login aman langsung mengecek ke database online
+if (loginForm) {
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault(); // Mencegah reload halaman bawaan form browser
+    
+    const passwordField = document.querySelector("#admin-password");
+    if (!passwordField) return;
+    
+    const passwordInput = passwordField.value;
+    if (loginStatus) loginStatus.textContent = "Memverifikasi kata sandi...";
 
-  try {
-    const { data, error } = await supabaseClient
-      .from('admin_config')
-      .select('value')
-      .eq('key', 'admin_password')
-      .maybeSingle(); // Menggunakan maybeSingle agar tidak memicu crash jika konfigurasi kosong
+    try {
+      const { data, error } = await supabaseClient
+        .from('admin_config')
+        .select('value')
+        .eq('key', 'admin_password')
+        .maybeSingle();
 
-    if (error || !data) {
-      loginStatus.textContent = "Gagal terhubung ke sistem keamanan database. Periksa RLS Policy Anda.";
-      return;
+      if (error) {
+        if (loginStatus) loginStatus.textContent = "Gagal membaca database: " + error.message;
+        return;
+      }
+
+      if (!data) {
+        if (loginStatus) loginStatus.textContent = "Konfigurasi kata sandi tidak ditemukan di database.";
+        return;
+      }
+
+      if (passwordInput !== data.value) {
+        if (loginStatus) loginStatus.textContent = "Password salah.";
+        return;
+      }
+
+      // Jika berhasil verifikasi
+      window.sessionStorage.setItem(SESSION_KEY, "1");
+      passwordField.value = "";
+      if (loginStatus) loginStatus.textContent = "";
+      
+      // Jalankan fungsi pembukaan dashboard secara aman
+      await openAdmin();
+
+    } catch (err) {
+      if (loginStatus) loginStatus.textContent = "Terjadi kesalahan koneksi sistem login.";
+      console.error(err);
     }
+  });
+}
 
-    if (passwordInput !== data.value) {
-      loginStatus.textContent = "Password salah.";
-      return;
-    }
+if (signoutButton) {
+  signoutButton.addEventListener("click", () => {
+    window.sessionStorage.removeItem(SESSION_KEY);
+    claimRecords = [];
+    if (recordsBody) recordsBody.replaceChildren();
+    if (adminData) adminData.hidden = true;
+    if (loginPanel) loginPanel.hidden = false;
+    if (loginForm) loginForm.reset();
+    if (loginStatus) loginStatus.textContent = "Kamu sudah keluar.";
+  });
+}
 
-    window.sessionStorage.setItem(SESSION_KEY, "1");
-    document.querySelector("#admin-password").value = "";
-    loginStatus.textContent = "";
+if (searchInput) {
+  searchInput.addEventListener("input", () => renderRecords(searchInput.value));
+}
+
+// Pengecekan otomatis saat halaman pertama kali dimuat
+document.addEventListener("DOMContentLoaded", async () => {
+  if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
     await openAdmin();
-
-  } catch (err) {
-    loginStatus.textContent = "Terjadi kesalahan sistem login.";
-    console.error(err);
   }
 });
-
-signoutButton.addEventListener("click", () => {
-  window.sessionStorage.removeItem(SESSION_KEY);
-  claimRecords = [];
-  recordsBody.replaceChildren();
-  adminData.hidden = true;
-  loginPanel.hidden = false;
-  loginForm.reset();
-  loginStatus.textContent = "Kamu sudah keluar.";
-});
-
-searchInput.addEventListener("input", () => renderRecords(searchInput.value));
-
-// Inisialisasi otomatis jika sesi sudah aktif
-if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
-  openAdmin();
-}
