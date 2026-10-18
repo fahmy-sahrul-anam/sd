@@ -9,11 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  
-  <!-- Memuat library Supabase terlebih dahulu secara sinkron -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/supabase.min.js"></script>
-  <!-- Memuat logika admin setelah library siap sepenuhnya -->
-  <script src="admin.js" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -78,5 +73,9 @@
 
     <p class="footer-note">Sistem terenkripsi: koneksi dan penyimpanan data dilindungi oleh arsitektur backend cloud terpusat.</p>
   </main>
+
+  <!-- Pustaka dimuat berurutan di akhir dokumen untuk mencegah galat inisialisasi -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/supabase.min.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>
