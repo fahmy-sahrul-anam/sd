@@ -1,5 +1,4 @@
-// Menggunakan Project URL asli milik database Anda agar koneksi tidak terputus
-const SUPABASE_URL = "https://cyazhqcdlmsqxntxssck.supabase.co";
+const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_KEY = "sb_publishable_j39Q5DHRUJTIdEf7yW99Dw_SKycORWF";
 const SESSION_KEY = "ruangHadiahAdminSession";
 
@@ -19,7 +18,7 @@ let claimRecords = [];
 
 function createCell(content) {
   const cell = document.createElement("td");
-  cell.textContent = content;
+  cell.textContent = content || "-";
   return cell;
 }
 
@@ -41,21 +40,30 @@ async function loadClaimsFromDatabase() {
 function renderRecords(query = "") {
   const normalizedQuery = query.trim().toLocaleLowerCase("id");
   const filtered = claimRecords.filter((record) =>
-    `${record.recipient_name} ${record.recipient_address} ${record.prize}`
+    `${record.recipient_name || ''} ${record.recipient_address || ''} ${record.prize || ''}`
       .toLocaleLowerCase("id")
       .includes(normalizedQuery)
   );
 
   recordsBody.replaceChildren();
+  
+  if (filtered.length === 0) {
+    emptyState.hidden = false;
+    updatedNote.textContent = `Menampilkan 0 klaim.`;
+    return;
+  }
+
+  emptyState.hidden = true;
   filtered.forEach((record) => {
     const row = document.createElement("tr");
     
-    row.append(createCell(new Date(record.created_at).toLocaleString("id-ID")));
+    const timeStr = record.created_at ? new Date(record.created_at).toLocaleString("id-ID") : "-";
+    row.append(createCell(timeStr));
     row.append(createCell(record.recipient_name));
     row.append(createCell(record.recipient_address));
     row.append(createCell(record.prize));
     
-    // Perbaikan format URL Google Maps agar interaktif dan akurat
+    // Kolom Tautan Google Maps
     const locationCell = document.createElement("td");
     if (record.latitude && record.longitude) {
       const mapLink = document.createElement("a");
@@ -70,6 +78,7 @@ function renderRecords(query = "") {
     }
     row.append(locationCell);
 
+    // Kolom Tautan Foto Cloud
     const photoCell = document.createElement("td");
     if (record.photo_url) {
       const link = document.createElement("a");
@@ -87,7 +96,6 @@ function renderRecords(query = "") {
     recordsBody.append(row);
   });
 
-  emptyState.hidden = filtered.length > 0;
   updatedNote.textContent = `Menampilkan ${filtered.length} dari ${claimRecords.length} klaim.`;
 }
 
@@ -95,17 +103,22 @@ async function openAdmin() {
   loginStatus.textContent = "Memuat data dari server cloud...";
   claimRecords = await loadClaimsFromDatabase();
   
-  document.querySelector("#total-count").textContent = String(claimRecords.length);
-  document.querySelector("#location-count").textContent = String(claimRecords.filter((r) => r.latitude).length);
-  document.querySelector("#photo-count").textContent = String(claimRecords.filter((r) => r.photo_url).length);
+  // Memastikan elemen counter terisi dengan aman tanpa memicu crash jika data kosong
+  const totalCountEl = document.querySelector("#total-count");
+  const locationCountEl = document.querySelector("#location-count");
+  const photoCountEl = document.querySelector("#photo-count");
+
+  if (totalCountEl) totalCountEl.textContent = String(claimRecords.length);
+  if (locationCountEl) locationCountEl.textContent = String(claimRecords.filter((r) => r.latitude).length);
+  if (photoCountEl) photoCountEl.textContent = String(claimRecords.filter((r) => r.photo_url).length);
   
   loginPanel.hidden = true;
   adminData.hidden = false;
   loginStatus.textContent = "";
-  renderRecords(searchInput.value);
+  renderRecords(searchInput.value || "");
 }
 
-// Proses verifikasi login aman langsung mengecek ke database online
+// Proses validasi login langsung ke database cloud
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const passwordInput = document.querySelector("#admin-password").value;
@@ -116,10 +129,10 @@ loginForm.addEventListener("submit", async (event) => {
       .from('admin_config')
       .select('value')
       .eq('key', 'admin_password')
-      .single();
+      .maybeSingle(); // Menggunakan maybeSingle agar tidak memicu crash jika konfigurasi kosong
 
     if (error || !data) {
-      loginStatus.textContent = "Gagal terhubung ke sistem keamanan database.";
+      loginStatus.textContent = "Gagal terhubung ke sistem keamanan database. Periksa RLS Policy Anda.";
       return;
     }
 
@@ -131,7 +144,7 @@ loginForm.addEventListener("submit", async (event) => {
     window.sessionStorage.setItem(SESSION_KEY, "1");
     document.querySelector("#admin-password").value = "";
     loginStatus.textContent = "";
-    openAdmin();
+    await openAdmin();
 
   } catch (err) {
     loginStatus.textContent = "Terjadi kesalahan sistem login.";
@@ -151,6 +164,7 @@ signoutButton.addEventListener("click", () => {
 
 searchInput.addEventListener("input", () => renderRecords(searchInput.value));
 
+// Inisialisasi otomatis jika sesi sudah aktif
 if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
   openAdmin();
 }
