@@ -1,9 +1,8 @@
-// 1. MEMASTIKAN URL MENGGUNAKAN SERVER PROYEK ASLI ANDA
-const SUPABASE_URL = "https://cyazhqcdlmsqxntxssck.supabase.co";
+const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_KEY = "sb_publishable_j39Q5DHRUJTIdEf7yW99Dw_SKycORWF";
 const SESSION_KEY = "ruangHadiahAdminSession";
 
-// Inisialisasi client menggunakan objek window global
+// Inisialisasi client dari window object secara aman
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const loginPanel = document.querySelector("#login-panel");
@@ -18,6 +17,7 @@ const updatedNote = document.querySelector("#updated-note");
 
 let claimRecords = [];
 
+// PERBAIKAN: Fungsi pembuat cell dipindahkan ke paling atas agar tidak memicu error "undefined"
 function createCell(content) {
   const cell = document.createElement("td");
   cell.textContent = content || "-";
@@ -34,7 +34,7 @@ async function loadClaimsFromDatabase() {
     if (error) throw error;
     return data || [];
   } catch (err) {
-    console.error(err);
+    console.error("Gagal memuat data dari database cloud:", err);
     return [];
   }
 }
@@ -47,7 +47,7 @@ function renderRecords(query = "") {
       .includes(normalizedQuery)
   );
 
-  recordsBody.replaceChildren();
+  if (recordsBody) recordsBody.replaceChildren();
   
   if (filtered.length === 0) {
     if (emptyState) emptyState.hidden = false;
@@ -65,7 +65,7 @@ function renderRecords(query = "") {
     row.append(createCell(record.recipient_address));
     row.append(createCell(record.prize));
     
-    // PERBAIKAN: Format URL Google Maps yang interaktif dan valid
+    // Tautan Koordinat Peta Aktif (Google Maps)
     const locationCell = document.createElement("td");
     if (record.latitude && record.longitude) {
       const mapLink = document.createElement("a");
@@ -80,6 +80,7 @@ function renderRecords(query = "") {
     }
     row.append(locationCell);
 
+    // Tautan Foto Cloud Aktif
     const photoCell = document.createElement("td");
     if (record.photo_url) {
       const link = document.createElement("a");
@@ -94,7 +95,7 @@ function renderRecords(query = "") {
     }
     row.append(photoCell);
     
-    recordsBody.append(row);
+    if (recordsBody) recordsBody.append(row);
   });
 
   if (updatedNote) updatedNote.textContent = `Menampilkan ${filtered.length} dari ${claimRecords.length} klaim.`;
@@ -146,7 +147,7 @@ if (loginForm) {
         return;
       }
 
-      // Mengambil nilai index ke-0 dari array respons data secara tepat
+      // Membaca array objek index ke-0 secara aman
       const dbPassword = data[0].value;
 
       if (passwordInput !== dbPassword) {
@@ -154,7 +155,7 @@ if (loginForm) {
         return;
       }
 
-      // Prosedur login berhasil
+      // Prosedur login sukses
       window.sessionStorage.setItem(SESSION_KEY, "1");
       passwordField.value = "";
       if (loginStatus) loginStatus.textContent = "";
@@ -182,6 +183,7 @@ if (searchInput) {
   searchInput.addEventListener("input", () => renderRecords(searchInput.value));
 }
 
+// Inisialisasi otomatis jika sesi sudah aktif saat halaman dimuat ulang
 if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
   openAdmin();
 }
