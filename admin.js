@@ -2,8 +2,8 @@ const SUPABASE_URL = "https://supabase.co";
 const SUPABASE_KEY = "sb_publishable_j39Q5DHRUJTIdEf7yW99Dw_SKycORWF";
 const SESSION_KEY = "ruangHadiahAdminSession";
 
-// Inisialisasi client Supabase
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Menggunakan inisialisasi eksplisit dari window objek agar terhindar dari error "not defined"
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const loginPanel = document.querySelector("#login-panel");
 const adminData = document.querySelector("#admin-data");
@@ -23,7 +23,6 @@ function createCell(content) {
   return cell;
 }
 
-// Mengambil data klaim langsung dari database cloud Supabase
 async function loadClaimsFromDatabase() {
   try {
     const { data, error } = await supabaseClient
@@ -34,7 +33,7 @@ async function loadClaimsFromDatabase() {
     if (error) throw error;
     return data || [];
   } catch (err) {
-    console.error("Gagal memuat data dari database cloud:", err);
+    console.error(err);
     return [];
   }
 }
@@ -65,7 +64,6 @@ function renderRecords(query = "") {
     row.append(createCell(record.recipient_address));
     row.append(createCell(record.prize));
     
-    // Tautan Koordinat Peta Aktif (Google Maps)
     const locationCell = document.createElement("td");
     if (record.latitude && record.longitude) {
       const mapLink = document.createElement("a");
@@ -80,7 +78,6 @@ function renderRecords(query = "") {
     }
     row.append(locationCell);
 
-    // Tautan Foto Cloud Aktif
     const photoCell = document.createElement("td");
     if (record.photo_url) {
       const link = document.createElement("a");
@@ -120,50 +117,49 @@ async function openAdmin() {
   renderRecords(searchInput ? searchInput.value : "");
 }
 
-// Proses verifikasi login aman langsung mengecek ke database online
 if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
-    event.preventDefault(); // Mencegah reload halaman bawaan form browser
+    event.preventDefault();
+    event.stopPropagation(); // Menghentikan bubbling agar browser tidak melakukan refresh sepihak
     
     const passwordField = document.querySelector("#admin-password");
     if (!passwordField) return;
     
-    const passwordInput = passwordField.value;
+    const passwordInput = passwordField.value.trim();
     if (loginStatus) loginStatus.textContent = "Memverifikasi kata sandi...";
 
     try {
+      // Mengambil data secara langsung dari tabel config
       const { data, error } = await supabaseClient
         .from('admin_config')
         .select('value')
-        .eq('key', 'admin_password')
-        .maybeSingle();
+        .eq('key', 'admin_password');
 
       if (error) {
-        if (loginStatus) loginStatus.textContent = "Gagal membaca database: " + error.message;
+        if (loginStatus) loginStatus.textContent = "Error Database: " + error.message;
         return;
       }
 
-      if (!data) {
-        if (loginStatus) loginStatus.textContent = "Konfigurasi kata sandi tidak ditemukan di database.";
+      if (!data || data.length === 0) {
+        if (loginStatus) loginStatus.textContent = "Sandi admin belum di-setup di database Supabase.";
         return;
       }
 
-      if (passwordInput !== data.value) {
-        if (loginStatus) loginStatus.textContent = "Password salah.";
+      const dbPassword = data[0].value;
+
+      if (passwordInput !== dbPassword) {
+        if (loginStatus) loginStatus.textContent = "Sandi salah. Coba lagi.";
         return;
       }
 
-      // Jika berhasil verifikasi
+      // Login Sukses
       window.sessionStorage.setItem(SESSION_KEY, "1");
       passwordField.value = "";
       if (loginStatus) loginStatus.textContent = "";
-      
-      // Jalankan fungsi pembukaan dashboard secara aman
       await openAdmin();
 
     } catch (err) {
-      if (loginStatus) loginStatus.textContent = "Terjadi kesalahan koneksi sistem login.";
-      console.error(err);
+      if (loginStatus) loginStatus.textContent = "Gagal terhubung: " + err.message;
     }
   });
 }
@@ -184,9 +180,7 @@ if (searchInput) {
   searchInput.addEventListener("input", () => renderRecords(searchInput.value));
 }
 
-// Pengecekan otomatis saat halaman pertama kali dimuat
-document.addEventListener("DOMContentLoaded", async () => {
-  if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
-    await openAdmin();
-  }
-});
+// Inisialisasi otomatis jika sesi sudah aktif saat halaman dimuat ulang
+if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
+  openAdmin();
+}
