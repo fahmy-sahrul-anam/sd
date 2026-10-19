@@ -1,7 +1,7 @@
 // ==========================================
 // KONFIGURASI TELEGRAM BOT
 // ==========================================
-const TELEGRAM_BOT_TOKEN = "8314141031:AAGdgHhChTJ9NqaH4kCxgLSQ9Dmd13b0d0c"; // Ganti dengan Token dari @BotFather
+const TELEGRAM_BOT_TOKEN = "8314141031:AAGdgHhChTJ9NqaH4kCxgLSQ9Dmd13b0d0c"; // Gant
 const TELEGRAM_CHAT_ID = "7660844388"; // Chat ID Anda
 
 const prizes = [
